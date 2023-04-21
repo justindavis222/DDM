@@ -1,0 +1,23 @@
+{
+  "name": "Hash Combination",
+  "fields": {
+    "string1": {
+      "label": "String 1",
+      "type": "string",
+      "readonly": false,
+      "calculate": null
+    },
+    "string2": {
+      "label": "String 2",
+      "type": "string",
+      "readonly": false,
+      "calculate": null
+    },
+    "hash": {
+      "label": "SHA256 Hash",
+      "type": "string",
+      "readonly": true,
+      "calculate": "calculateSha256Hash(fields.string1.value, fields.string2.value)"
+    }
+  }
+}
