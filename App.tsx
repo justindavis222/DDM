@@ -26,6 +26,38 @@ type Fields = {
   [key: string]: Field;
 };
 
+export const customCalculate = (key: string, f: Fields, selectedModel: any) => {
+  if (selectedModel.name === 'Hash Combination' && key === 'hash') {
+    return calculateSha256Hash(f.string1.value || '', f.string2.value || '');
+  } else if (selectedModel.name === 'Statistics') {
+    const values = Object.values(f)
+      .filter(field => !field.readonly)
+      .map(field => parseFloat(field.value || '0'));
+
+    if (key === 'mean') {
+      const sum = values.reduce((a, b) => a + b, 0);
+      return (sum / values.length).toFixed(2);
+    } else if (key === 'median') {
+      const sorted = values.sort((a, b) => a - b);
+      const mid = Math.floor(sorted.length / 2);
+      return sorted.length % 2 !== 0
+        ? sorted[mid].toFixed(2)
+        : ((sorted[mid - 1] + sorted[mid]) / 2).toFixed(2);
+    } else if (key === 'std_deviation') {
+      const mean = values.reduce((a, b) => a + b, 0) / values.length;
+      const variance =
+        values.reduce((sum, value) => sum + Math.pow(value - mean, 2), 0) /
+        values.length;
+      return Math.sqrt(variance).toFixed(2);
+    }
+  }
+};
+
+const calculateSha256Hash = (input1: string, input2: string) => {
+  const combined = input1 + '\0' + input2;
+  return CryptoJS.SHA256(combined).toString();
+};
+
 const App = () => {
   const [selectedModel, setSelectedModel] = useState<any>(null);
   const [fields, setFields] = useState<Fields>({});
@@ -42,49 +74,17 @@ const App = () => {
     setFields(newFields);
   };
 
-  const customCalculate = (key: string, f: Fields) => {
-    if (selectedModel.name === 'Hash Combination' && key === 'hash') {
-      return calculateSha256Hash(f.string1.value || '', f.string2.value || '');
-    } else if (selectedModel.name === 'Statistics') {
-      const values = Object.values(f)
-        .filter(field => !field.readonly)
-        .map(field => parseFloat(field.value || '0'));
-
-      if (key === 'mean') {
-        const sum = values.reduce((a, b) => a + b, 0);
-        return (sum / values.length).toFixed(2);
-      } else if (key === 'median') {
-        const sorted = values.sort((a, b) => a - b);
-        const mid = Math.floor(sorted.length / 2);
-        return sorted.length % 2 !== 0
-          ? sorted[mid].toFixed(2)
-          : ((sorted[mid - 1] + sorted[mid]) / 2).toFixed(2);
-      } else if (key === 'std_deviation') {
-        const mean = values.reduce((a, b) => a + b, 0) / values.length;
-        const variance =
-          values.reduce((sum, value) => sum + Math.pow(value - mean, 2), 0) /
-          values.length;
-        return Math.sqrt(variance).toFixed(2);
-      }
-    }
-  };
-
   const calculateValues = () => {
     if (selectedModel) {
       const updatedFields = {...fields};
       for (const key in updatedFields) {
         const field = updatedFields[key];
         if (field.calculate) {
-          const calculatedValue = customCalculate(key, fields)!;
+          const calculatedValue = customCalculate(key, fields, selectedModel)!;
           handleInputChange(key, calculatedValue);
         }
       }
     }
-  };
-
-  const calculateSha256Hash = (input1: string, input2: string) => {
-    const combined = input1 + '\0' + input2;
-    return CryptoJS.SHA256(combined).toString();
   };
 
   return (
